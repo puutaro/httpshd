@@ -57,7 +57,7 @@ func main() {
 		return
 	}
 
-	go http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			log.Printf("%s: [%s] can't read body", req.RemoteAddr, err.Error())
