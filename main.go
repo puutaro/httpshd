@@ -1,15 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/creack/pty"
@@ -42,7 +41,7 @@ func main() {
 
 	defaultShell := os.Getenv("SHELL")
 	if defaultShell == "" {
-		defaultShell = "/bin/sh"
+		defaultShell = "/bin/bash"
 	}
 
 	host := flag.String("host", "0.0.0.0", "interface address")
@@ -58,15 +57,14 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		b, err := ioutil.ReadAll(req.Body)
+	go http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			log.Printf("%s: [%s] can't read body", req.RemoteAddr, err.Error())
 			return
 		}
-
-		s := string(b)
-		s = strings.TrimSpace(s)
+		tb := bytes.TrimSpace(b)
+		s := string(tb)
 
 		log.Printf("[%s] executing command: %s -c %q", req.RemoteAddr, *shell, s)
 
@@ -78,7 +76,11 @@ func main() {
 			return
 		}
 
-		io.Copy(unbufferedWriter{w}, fp)
+		_, err = io.Copy(unbufferedWriter{w}, fp)
+
+		if err != nil {
+			log.Printf("[%s] failure to copy", req.RemoteAddr)
+		}
 
 		log.Printf("[%s] success", req.RemoteAddr)
 	})
