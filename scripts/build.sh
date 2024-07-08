@@ -2,6 +2,7 @@
 
 set -ue
 
+e=""
 readonly CURRENT_DIR_PATH=$(dirname "$0")
 readonly HTTPSHD_DIR_PATH=$(cd "${CURRENT_DIR_PATH}"; cd ../; pwd)
 cd "${HTTPSHD_DIR_PATH}"
@@ -43,7 +44,8 @@ CC=aarch64-linux-gnu-gcc \
 	  main.go | pv
 chmod +x "${binary_name_arm64}"
 
-gh release delete -y "${VERSION}"
+gh release delete -y "${VERSION}" \
+  || e=$?
 sleep 1
 gh release create "${VERSION}" \
   --title "httpshd-${VERSION}" \
